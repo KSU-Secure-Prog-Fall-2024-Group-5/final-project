@@ -1,0 +1,33 @@
+# Ignore extension-less files,
+# as they're likely executables.
+*
+!*.*
+!*/
+
+# Oops! Allow Makefile.
+!Makefile
+
+# Ignore default binary name.
+a.out
+
+# Ignore object files.
+*.o
+
+# Ignore source ZIP file + PDF file,
+# and ignore report output PDF file.
+*.zip
+*.pdf
+
+# Ignore VS Code workspace configuration folder.
+.vscode/
+
+# Ignore example files from textbook.
+ex_*.*
+
+# Ignore additions to the report, as they consist of
+# the entire source code tree, just copy-pasted over.
+# If you need to change things, just force add.
+*.md
+
+# Ignore drawio documents.
+*.drawio.*
