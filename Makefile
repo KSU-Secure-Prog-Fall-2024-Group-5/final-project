@@ -15,10 +15,10 @@ VALGRIND_FLAGS = --quiet --tool=memcheck --leak-check=yes --show-reachable=yes -
 all: logappend logread
 
 logappend: logappend.c common.h
-	$(CC) $(CC_FLAGS) -o logappend logappend.c common.h
+	$(CC) $(CC_FLAGS) -o logappend logappend.c `pkg-config --cflags --libs libgcrypt`
 
 logread: logread.c common.h
-	$(CC) $(CC_FLAGS) -o logread logread.c common.h
+	$(CC) $(CC_FLAGS) -o logread logread.c `pkg-config --cflags --libs libgcrypt`
 
 # -c for compiling but not linking
 # -g for debugging with gdb...
