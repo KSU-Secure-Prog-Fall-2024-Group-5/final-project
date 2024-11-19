@@ -28,6 +28,7 @@ ex_*.*
 # the entire source code tree, just copy-pasted over.
 # If you need to change things, just force add.
 *.md
+*.html
 
 # Ignore drawio documents.
 *.drawio.*

@@ -7,6 +7,7 @@
 #define NEED_LIBGCRYPT_VERSION "1.11.0"
 
 static bool init_libgcrypt() {
+	// Directly copied from:
 	// https://gnupg.org/documentation/manuals/gcrypt/Initializing-the-library.html
 
 	/* Version check should be the very first call because it
