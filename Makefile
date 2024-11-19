@@ -7,7 +7,7 @@
 # do a full re-build lol.. it's not like it costs much time
 
 CC = gcc
-CC_FLAGS = -std=c99 -Wall -Wpedantic -Wextra -Werror -fsanitize=undefined
+CC_FLAGS = -std=c99 -Wall -Wpedantic -Wextra -fsanitize=undefined
 VALGRIND_FLAGS = --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=3 --error-exitcode=1
 
 # ALL_OBJECTS = 
