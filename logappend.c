@@ -6,6 +6,7 @@
 #include <gcrypt.h>
 
 #include "common.h"
+#include "logutils.h"
 
 int main(int argv, char *argc[]) {
 	if (argv <= 1) {

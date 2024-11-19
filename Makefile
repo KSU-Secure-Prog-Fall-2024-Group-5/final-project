@@ -12,12 +12,15 @@ VALGRIND_FLAGS = --quiet --tool=memcheck --leak-check=yes --show-reachable=yes -
 
 # ALL_OBJECTS = 
 
-all: logappend logread
+all: logutils.o logappend logread
 
-logappend: logappend.c common.h
+logutils.o: logutils.c
+	$(CC) $(CC_FLAGS) -c -o logutils logutils.c `pkg-config --cflags --libs libgcrypt`
+	
+logappend: logappend.c common.h logutils.o
 	$(CC) $(CC_FLAGS) -o logappend logappend.c `pkg-config --cflags --libs libgcrypt`
 
-logread: logread.c common.h
+logread: logread.c common.h logutils.o
 	$(CC) $(CC_FLAGS) -o logread logread.c `pkg-config --cflags --libs libgcrypt`
 
 # -c for compiling but not linking
