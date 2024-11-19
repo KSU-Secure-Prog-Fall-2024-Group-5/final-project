@@ -7,9 +7,7 @@
 
 #include "common.h"
 
-#define NEED_LIBGCRYPT_VERSION "1.11.0"
-
 int main() {
-	puts(gcry_check_version(NULL));
+	init_libgcrypt();
 	return EXIT_SUCCESS;
 }
