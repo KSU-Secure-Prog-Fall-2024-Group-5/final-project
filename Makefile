@@ -14,8 +14,8 @@ VALGRIND_FLAGS = --quiet --tool=memcheck --leak-check=yes --show-reachable=yes -
 
 all: logutils.o logappend logread
 
-logutils.o: logutils.c
-	$(CC) $(CC_FLAGS) -c -o logutils logutils.c `pkg-config --cflags --libs libgcrypt`
+logutils.o: logutils.c logutils.h
+	$(CC) $(CC_FLAGS) -c -o logutils.o logutils.c `pkg-config --cflags --libs libgcrypt`
 	
 logappend: logappend.c common.h logutils.o
 	$(CC) $(CC_FLAGS) -o logappend logappend.c `pkg-config --cflags --libs libgcrypt`
