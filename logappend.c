@@ -7,7 +7,20 @@
 
 #include "common.h"
 
-int main() {
-	init_libgcrypt();
+int main(int argv, char *argc[]) {
+	if (argv <= 1) {
+		printf(
+			"%s usage:\n"
+			"logappend -T <timestamp> -K <token>\n"
+			"	( -E <employee-name> | -G <guest-name> )\n"
+			"	( -A | -L )\n"
+			"	[-R <room-id>]\n"
+			"	<log>\n"
+			"logappend -B <file>\n",
+			argv ? argc[0] : "logappend");
+	}
+
+	if (!init_libgcrypt()) return EXIT_FAILURE;
+
 	return EXIT_SUCCESS;
 }

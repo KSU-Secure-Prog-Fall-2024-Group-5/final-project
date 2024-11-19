@@ -46,3 +46,29 @@ static bool init_libgcrypt() {
 
 	return true;
 }
+
+typedef enum {
+	LOG_ROLE_EMPLOYEE,
+	LOG_ROLE_GUEST,
+} LogPersonRole;
+
+typedef enum {
+	LOG_EVENT_ARRIVAL,
+	LOG_EVENT_DEPARTURE,
+} LogEventType;
+
+typedef struct {
+	char *name;
+	LogPersonRole role;
+} LogPerson;
+
+typedef struct {
+	// timestamp
+	// employee name -or- guest name
+	// arrival -or- departure
+	// room id
+	unsigned long timestamp;
+	unsigned long room_id;
+	LogPerson person;
+	LogEventType event;
+} LogEntry;
