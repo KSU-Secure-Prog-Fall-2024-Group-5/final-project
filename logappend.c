@@ -1,5 +1,6 @@
 #include <stdlib.h> // -> EXIT_*
 #include <stdio.h>  // -> printf
+#include <string.h>
 
 #define GCRYPT_NO_MPI_MACROS
 #define GCRYPT_NO_DEPRECATED
@@ -22,6 +23,9 @@ int main(int argv, char *argc[]) {
 		exit(EXIT_FAILURE);
 	}
 
+	bool use_batch_file = argv == 3 && strncmp(argc[1], "-B", 3);
+	if (use_batch_file) {}
+
 	LogArgs args = parse_args(argv - 1, &argc[1]);
 
 	LogArgsList args_list;
@@ -40,7 +44,6 @@ int main(int argv, char *argc[]) {
 		logentry_push(&file->entries, args_item->entry);
 		logfile_write(args_item->log_file, file);
 	}
-
 
 	if (!init_libgcrypt()) return EXIT_FAILURE;
 
