@@ -20,13 +20,13 @@ typedef struct {
 void printLog(LogEntryList *logEntries, int n_entries) {
     for (int i = 0; i < n_entries; i++) {
         LogEntry *current = &logEntries->entry[i];
-        printf("[%i] %i, %i, %d %s %s\n",
+        printf("[%i] %i, %i, %s %s %s\n",
                i,
                current->timestamp,
                current->room_id,
-               current->person.role,
+               current->person.role ? "Employee" : "Guest",
                current->person.name,
-               current->event);
+               current->event ? "Arrival" : "Departure");
     }
 }
 
@@ -38,13 +38,13 @@ void findPerson(LogEntryList *logEntries, LogPerson person, int n_entries) {
         LogPerson *cPerson = &current->person;     
 
         if(cPerson->name == person.name && cPerson->role == person.role) {
-            printf("[%i] %i, %i, %d %s %s\n",
+            printf("[%i] %i, %i, %s %s %s\n",
                    i,
                    current->timestamp,
                    current->room_id,
-                   current->person.role,
+                   current->person.role ? "Employee" : "Guest",
                    current->person.name,
-                   current->event);
+                   current->event ? "Arrival" : "Departure");
         }
     }
 }
