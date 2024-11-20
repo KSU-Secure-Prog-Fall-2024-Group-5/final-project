@@ -35,6 +35,9 @@ int logread_parse_args(int argv, char *argc[], arguments *args) {
         return 0;
     }
 
+    // In -R mode, we must have 6 options
+    if (argv != 7) return 1;
+
     // If arg 3 isn't -R or -S, something is wrong
     if (strncmp(argc[3], "-R", 2) != 0) return 1;
 
@@ -44,10 +47,12 @@ int logread_parse_args(int argv, char *argc[], arguments *args) {
         args->person.role = LOG_ROLE_GUEST;
     } else return 1;
 
+    if (strncmp(argc[5], "", 1) <= 0) return 1;
     length = strlen(argc[5]);
     args->person.name = malloc(length);
     strncpy(args->person.name, argc[5], length);
 
+    if (strncmp(argc[6], "", 1) <= 0) return 1;
     length = strlen(argc[6]);
     args->logname = malloc(length);
     strncpy(args->logname, argc[6], length);
@@ -76,8 +81,15 @@ int main(int argv, char *argc[]) {
         return EXIT_FAILURE;
     };
 
+    LogFile* log = logfile_read(args.logname, args.token);
+    if (log == NULL) {
+        printf("Error reading log file\n");
+        return EXIT_FAILURE;
+    }
+
     free(args.token);
     free(args.logname);
+    free(args.person.name);
 
 	return EXIT_SUCCESS;
 }
