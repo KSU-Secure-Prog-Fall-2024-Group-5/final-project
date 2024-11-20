@@ -19,7 +19,28 @@ int main(int argv, char *argc[]) {
 			"	<log>\n"
 			"logappend -B <file>\n",
 			argv ? argc[0] : "logappend");
+		exit(EXIT_FAILURE);
 	}
+
+	LogArgs args = parse_args(argv - 1, &argc[1]);
+
+	LogArgsList args_list;
+	args_list.length = 1;
+	args_list.args_items = &args;
+
+	puts("programmer has a nap! etc. from sonic");
+	return EXIT_FAILURE;
+
+	for (size_t i = 0; i < args_list.length; i++) {
+		LogArgs *args_item = &args_list.args_items[i];
+		if (!args_item) die("item in args list was NULL?", EXIT_FAILURE);
+
+		LogFile *file =
+			logfile_read(args_item->log_file, args_item->given_token);
+		logentry_push(&file->entries, args_item->entry);
+		logfile_write(args_item->log_file, file);
+	}
+
 
 	if (!init_libgcrypt()) return EXIT_FAILURE;
 

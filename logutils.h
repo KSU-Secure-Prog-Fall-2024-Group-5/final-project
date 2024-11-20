@@ -28,26 +28,39 @@ typedef struct {
 } LogEntry;
 
 typedef struct {
-	uint8_t header[128 / 8];
-	LogEntry *entries;
-	size_t entries_len;
+	size_t length;
+	LogEntry *entry;
+} LogEntryList;
+
+typedef struct {
+	uint8_t token[128 / 8];
+	LogEntryList entries;
 } LogFile;
 
 typedef struct {
+	char *given_token;
+	LogEntry entry;
+	char *log_file;
+} LogArgs;
+
+typedef struct {
 	size_t length;
-	LogEntry *entry;
-} LogEntries;
+	LogArgs *args_items;
+} LogArgsList;
+
+LogArgsList parse_args_batch(char *arg_string);
+LogArgs parse_args(size_t args_len, char *args[]);
 // STARTLOG and ENDLOG markers are not in LogEntries vec
 
-LogFile *logfile_read(const char *);
+LogFile *logfile_read(char *filename, char *given_token);
 // ENDLOG is only checked for, not added to entries. if there's too many, don't
 // care if not found, error, return NULL, panic
 
-void logfile_write(const char *, const LogFile *);
+void logfile_write(char *, LogFile *);
 // appends ENDLOG transparently
 
-void logentry_push(LogEntries *, LogEntry);
-LogEntry logentry_pop(LogEntries *);
+void logentry_push(LogEntryList *, LogEntry);
+LogEntry logentry_pop(LogEntryList *);
 // it's vaguely vec-like
 
 /*

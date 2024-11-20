@@ -6,6 +6,17 @@
 
 #define NEED_LIBGCRYPT_VERSION "1.11.0"
 
+#define sizeofarr(arr) (sizeof(arr) / sizeof(*arr))
+
+#define stringify_eval(x) #x
+#define stringify(x)      stringify_eval(x)
+
+#define die(msg, exit_no) \
+	do { \
+		puts(__FILE_NAME__ "@" stringify(__LINE__) ": " msg); \
+		exit(exit_no); \
+	} while (0)
+
 static bool init_libgcrypt() {
 	// Directly copied from:
 	// https://gnupg.org/documentation/manuals/gcrypt/Initializing-the-library.html

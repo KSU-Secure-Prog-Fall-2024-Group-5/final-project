@@ -18,10 +18,10 @@ logutils.o: logutils.c logutils.h
 	$(CC) $(CC_FLAGS) -c -o logutils.o logutils.c `pkg-config --cflags --libs libgcrypt`
 	
 logappend: logappend.c common.h logutils.o
-	$(CC) $(CC_FLAGS) -o logappend logappend.c `pkg-config --cflags --libs libgcrypt`
+	$(CC) $(CC_FLAGS) -o logappend logutils.o logappend.c `pkg-config --cflags --libs libgcrypt`
 
 logread: logread.c common.h logutils.o
-	$(CC) $(CC_FLAGS) -o logread logread.c `pkg-config --cflags --libs libgcrypt`
+	$(CC) $(CC_FLAGS) -o logread logutils.o logread.c `pkg-config --cflags --libs libgcrypt`
 
 # -c for compiling but not linking
 # -g for debugging with gdb...
