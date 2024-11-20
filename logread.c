@@ -17,8 +17,18 @@ typedef struct {
 
 // Prints out all entries in a log nicely
 // Side effects: prints to screen
-void printLog(const LogFile *log) {
-
+void printLog(const LogEntryList *logEntries) {
+    int n = sizeof(logEntries->entry) / sizeof(LogEntry);
+    for (int i = 0; i < n; i++) {
+        LogEntry *current = logEntries->entry[i];
+        printf("[%i] %i, %i, %s %s %s\n",
+               i,
+               current->timestamp,
+               current->room_id,
+               current->person->role
+               current->person->name,
+               curren->event);
+    }
 }
 
 // Finds and prints all records in a log associated with a given LogPerson
