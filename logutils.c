@@ -72,23 +72,58 @@ LogArgs parse_args(size_t args_len, char *args[]) {
 #undef match_flag
 	}
 
-	if (result.entry.timestamp & 0xC0000000)
-		die("timestamp (-T <timestamp>) is required", 1);
-	if ((result.entry.room_id & 0xC0000000) &&
-		(result.entry.room_id != UINT32_MAX))
-		die("room id (-R <room-id>) is in invalid range", 1);
-	if ((result.entry.person.name == NULL) ||
-		(result.entry.person.role == '\0'))
-		die("employee name (-E <employee-name>) or guest name "
-			"(-G <guest-name>) but not both is required",
-			1);
-	if (result.entry.event == '\0')
-		die("arrival event (-A) or departure event (-L) required", 1);
-	if (result.given_token == NULL) die("token (-K <token>) required", 1);
-	if (result.log_file == NULL)
-		die("log file name required (no flag, just put it as a string)", 1);
+	const char *msg = logargs_validate(&result);
+	if (msg != NULL) puts(msg), exit(1);
 
 	return result;
+}
+
+const char *validate_token(char *given_token) {
+	char curr;
+	while ((curr = *(given_token++)) != '\0') {
+		// (A-Z)(a-z)(0-9) no spaces case sensitive
+		// return nice error messages
+	}
+	return NULL;
+}
+
+const char *validate_name(char *name) {
+	char curr;
+	while ((curr = *(name++)) != '\0') {
+		// (A-Z)(a-z) no spaces case sensitive
+		// return nice error messages so maybe have separate ones for spaces and
+		// numbers and any other.
+		// and check logargs_validate for example of bringing other errors
+		// forward
+	}
+	return NULL;
+}
+
+const char *logentry_validate(LogEntry *entry) {
+	if (entry->timestamp & 0xC0000000)
+		return "timestamp (-T <timestamp>) is required";
+	if ((entry->room_id & 0xC0000000) && (entry->room_id != UINT32_MAX))
+		return "room id (-R <room-id>) is in invalid range";
+	if ((entry->person.name == NULL) || (entry->person.role == '\0'))
+		return "employee name (-E <employee-name>) or guest name "
+			   "(-G <guest-name>) but not both is required";
+	if (entry->event == '\0')
+		return "arrival event (-A) or departure event (-L) required";
+
+	return NULL;
+}
+
+const char *logargs_validate(LogArgs *args) {
+	{ // LogArgs itself has a LogEntry inside it. validate that.
+		const char *msg = logentry_validate(&args->entry);
+		if (msg != NULL) return msg;
+	}
+
+	if (args->given_token == NULL) return "token (-K <token>) required";
+	if (args->log_file == NULL)
+		return "log file name required (no flag, just put it as a string)";
+
+	return NULL;
 }
 
 LogFile *logfile_read(char *filename, char *given_token) {
