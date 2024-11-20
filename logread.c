@@ -4,8 +4,10 @@
 #include "common.h"
 #include "logutils.h"
 
+// Macro for printing out correct program usage
 #define logread_print_usage() printf("logread usage:\n logread -K <token> -S <log>\n logread -K <token> -R (-E <name> | -G <name>) <log>\n")
 
+// Stores configuration for the program passed to it through arguments
 typedef struct {
     char* token;
     char* logname;
@@ -13,6 +15,22 @@ typedef struct {
     LogPerson person; 
 } arguments;
 
+// Prints out all entries in a log nicely
+// Side effects: prints to screen
+void printLog(const LogFile *log) {
+
+}
+
+// Finds and prints all records in a log associated with a given LogPerson
+// Returns 0 on success, 1 on failure 
+// Side effects: prints to screen
+int findPerson(const LogFile *log, LogPerson person) {
+
+}
+
+// Parse arguments provided to program
+// Returns 0 on success, 1 on failure 
+// Side effects: modifies the arguments struct passed to it
 int logread_parse_args(int argv, char *argc[], arguments *args) {
 
     if (strncmp(argc[1], "-K", 2) != 0) return 1; // Ensures are 1 == "-K"
@@ -91,5 +109,5 @@ int main(int argv, char *argc[]) {
     free(args.logname);
     free(args.person.name);
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
