@@ -27,18 +27,20 @@ LogArgs parse_args(size_t args_len, char *args[]) {
 	result.log_file = NULL;
 
 	for (size_t i = 0; i < args_len; i++) {
-#define match_flag(f) (strncmp(args[i], "-T", 3) == 0)
+#define match_flag(f) (strncmp(args[i], f, 3) == 0)
 #define need_arg      ((i + 1) < args_len)
 		if (false) { // space-filler so everything lines up :)
-		} else if (match_flag("-T") && need_arg && need_arg) {
+		} else if (match_flag("-T") && need_arg) {
 			// -T <timestamp>
 			char *tail = args[i + 1];
 			char *expected_tail = &tail[strlen(tail)];
 			result.entry.timestamp = strtoul(args[i + 1], &tail, 10);
 			if (tail != expected_tail) die("malformed number in timestamp", 1);
+			i++;
 		} else if (match_flag("-K") && need_arg) {
 			// -K <token>
 			result.given_token = args[i + 1];
+			i++;
 		} else if ((match_flag("-E") || match_flag("-G")) && need_arg) {
 			// -E <employee-name> | -G <guest-name>
 			if (result.entry.person.name != NULL)
@@ -46,6 +48,7 @@ LogArgs parse_args(size_t args_len, char *args[]) {
 			result.entry.person.name = args[i + 1];
 			result.entry.person.role =
 				args[i][1] == 'E' ? LOG_ROLE_EMPLOYEE : LOG_ROLE_GUEST;
+			i++;
 		} else if (match_flag("-A") || match_flag("-L")) {
 			// -A | -L
 			if (result.entry.event != '\0')
@@ -58,6 +61,7 @@ LogArgs parse_args(size_t args_len, char *args[]) {
 			char *expected_tail = &tail[strlen(tail)];
 			result.entry.room_id = strtoul(args[i + 1], &tail, 10);
 			if (tail != expected_tail) die("malformed number in room id", 1);
+			i++;
 		} else {
 			// <log>
 			if (result.log_file != NULL)
