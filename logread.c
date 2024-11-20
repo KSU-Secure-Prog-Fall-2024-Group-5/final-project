@@ -23,19 +23,33 @@ void printLog(const LogEntryList *logEntries) {
         LogEntry *current = logEntries->entry[i];
         printf("[%i] %i, %i, %s %s %s\n",
                i,
-               current->timestamp,
-               current->room_id,
-               current->person->role
-               current->person->name,
-               curren->event);
+               current.timestamp,
+               current.room_id,
+               current.person.role
+               current.person->name,
+               current.event);
     }
 }
 
 // Finds and prints all records in a log associated with a given LogPerson
 // Returns 0 on success, 1 on failure 
 // Side effects: prints to screen
-int findPerson(const LogFile *log, LogPerson person) {
+int findPerson(const LogEntryList *logEntries, LogPerson person) {
+    int n = sizeof(logEntries->entry) / sizeof(LogEntry);
+    for (int i = 0; i < n; i++) {
+        LogEntry *current = logEntries->entry[i];
+        LogPerson *cPerson = current.person       
 
+        if(cPerson->name == person->name && cPerson ->role == person->role) {
+            printf("[%i] %i, %i, %s %s %s\n",
+                   i,
+                   current.timestamp,
+                   current.room_id,
+                   current.person.role
+                   current.person->name,
+                   current.event);
+        }
+    }
 }
 
 // Parse arguments provided to program
