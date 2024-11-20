@@ -17,37 +17,34 @@ typedef struct {
 
 // Prints out all entries in a log nicely
 // Side effects: prints to screen
-void printLog(const LogEntryList *logEntries) {
-    int n = sizeof(logEntries->entry) / sizeof(LogEntry);
-    for (int i = 0; i < n; i++) {
-        LogEntry *current = logEntries->entry[i];
-        printf("[%i] %i, %i, %s %s %s\n",
+void printLog(LogEntryList *logEntries, int n_entries) {
+    for (int i = 0; i < n_entries; i++) {
+        LogEntry *current = &logEntries->entry[i];
+        printf("[%i] %i, %i, %d %s %s\n",
                i,
-               current.timestamp,
-               current.room_id,
-               current.person.role
-               current.person->name,
-               current.event);
+               current->timestamp,
+               current->room_id,
+               current->person.role,
+               current->person.name,
+               current->event);
     }
 }
 
 // Finds and prints all records in a log associated with a given LogPerson
-// Returns 0 on success, 1 on failure 
 // Side effects: prints to screen
-int findPerson(const LogEntryList *logEntries, LogPerson person) {
-    int n = sizeof(logEntries->entry) / sizeof(LogEntry);
-    for (int i = 0; i < n; i++) {
-        LogEntry *current = logEntries->entry[i];
-        LogPerson *cPerson = current.person       
+void findPerson(LogEntryList *logEntries, LogPerson person, int n_entries) {
+    for (int i = 0; i < n_entries; i++) {
+        LogEntry *current = &logEntries->entry[i];
+        LogPerson *cPerson = &current->person;     
 
-        if(cPerson->name == person->name && cPerson ->role == person->role) {
-            printf("[%i] %i, %i, %s %s %s\n",
+        if(cPerson->name == person.name && cPerson->role == person.role) {
+            printf("[%i] %i, %i, %d %s %s\n",
                    i,
-                   current.timestamp,
-                   current.room_id,
-                   current.person.role
-                   current.person->name,
-                   current.event);
+                   current->timestamp,
+                   current->room_id,
+                   current->person.role,
+                   current->person.name,
+                   current->event);
         }
     }
 }
@@ -128,6 +125,11 @@ int main(int argv, char *argc[]) {
         printf("Error reading log file\n");
         return EXIT_FAILURE;
     }
+
+    const int n_entries = sizeof(&log->entries.entry) / sizeof(LogEntry);
+
+    if (args.mode == 0) printLog(&log->entries, n_entries);
+    else findPerson(&log->entries, args.person, n_entries);
 
     free(args.token);
     free(args.logname);
