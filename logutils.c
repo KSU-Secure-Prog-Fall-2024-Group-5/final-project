@@ -64,31 +64,25 @@ LogFile *logfile_read(char *filename, char *given_token) {
         return NULL;
     }
 
-    int tokenSize = strlen(given_token); 
-    char* buf = malloc(tokenSize);
-    read = fread(buf, 1, tokenSize, file);
-    if (read != tokenSize || strncmp(given_token, buf, tokenSize) != 0) {
-        printf("Error: tokens do not match");
+    char* f_buf = malloc(2048); // File buffer
+    char* e_buf = malloc(2048); // Entry buffer
+    char* p_buf = malloc(2048); // Previous buffer
+
+    int tokenSize = strlen(given_token);
+    fgets(f_buf, 2048, file);
+    e_buf = strtok(f_buf, "*");
+    int bufSize = strlen(e_buf);
+    if (strncmp(given_token, e_buf, tokenSize) != 0 || strncmp(e_buf, given_token, bufSize) != 0) {
+        printf("Error: tokens do not match.\n");
         return NULL;
-    }
-    free(buf);
-
-    char *f_buf; // File buffer
-    char *e_buf; // Entry buffer
-    char *p_buf; // Previous entry buffer
-
-    f_buf = malloc(1024);
-    e_buf = malloc(1024);
-    p_buf = malloc(1024);
-    
-    fgets(f_buf, 1024, file);
+    } 
 
     LogFile *parsed = malloc(sizeof(LogFile));
     //for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
     parsed->entries.entry = NULL;
     parsed->entries.length = 0;
 
-    e_buf = strtok(f_buf, "#");
+    e_buf = strtok(NULL, "#");
     while(e_buf[0] != '\0' && strncmp(e_buf, "ENDLOG", 6) != 0 && strncmp(p_buf, "ENDLOG", 6) != 0) {
 
         // Read timestamp
