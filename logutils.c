@@ -6,10 +6,10 @@
 #include "common.h"
 #include "logutils.h"
 
-const char *validate_token(char *given_token) {
-	if (given_token == NULL) return "token is required";
+const char *validate_token(char *token) {
+	if (token == NULL || token[0] == '\0') return "token is required";
 	char curr;
-	while ((curr = *(given_token++)) != '\0') {
+	while ((curr = *(token++)) != '\0') {
 		// (A-Z)(a-z)(0-9) no spaces case sensitive
 		if (!isalnum(curr))
 			return "tokens must only have alphanumeric characters";
@@ -18,7 +18,7 @@ const char *validate_token(char *given_token) {
 }
 
 const char *validate_name(char *name) {
-	if (name == NULL) return "name is required";
+	if (name == NULL || name[0] == '\0') return "name is required";
 	char curr;
 	while ((curr = *(name++)) != '\0') {
 		// (A-Z)(a-z) no spaces case sensitive
@@ -57,127 +57,111 @@ LogFile *logfile_read(char *filename, char *given_token) {
 		return NULL;
 	}
 
-    char header[8];
-    int read = fread(header, 1, 8, file);
-    if (read != 8 || strncmp("STARTLOG", header, 8) != 0) {
-        printf(CONSOLE_VIS_ERROR "ERROR: '%s' is not a valid log\n" CONSOLE_VIS_RESET, filename);
-        return NULL;
-    }
+	char header[8];
+	int read = fread(header, 1, 8, file);
+	if (read != 8 || strncmp("STARTLOG", header, 8) != 0) {
+		printf(CONSOLE_VIS_ERROR
+			"ERROR: '%s' is not a valid log\n" CONSOLE_VIS_RESET,
+			filename);
+		return NULL;
+	}
 
-    char* f_buf = malloc(2048); // File buffer
-    char* e_buf = malloc(2048); // Entry buffer
-    char* p_buf = malloc(2048); // Previous buffer
+	char *f_buf = malloc(2048); // File buffer
+	char *e_buf = malloc(2048); // Entry buffer
+	char *p_buf = malloc(2048); // Previous buffer
 
-    int tokenSize = strlen(given_token);
-    fgets(f_buf, 2048, file);
-    e_buf = strtok(f_buf, "*");
-    int bufSize = strlen(e_buf);
-    if (strncmp(given_token, e_buf, tokenSize) != 0 || strncmp(e_buf, given_token, bufSize) != 0) {
-        printf("Error: tokens do not match.\n");
-        return NULL;
-    } 
+	int tokenSize = strlen(given_token);
+	fgets(f_buf, 2048, file);
+	e_buf = strtok(f_buf, "*");
+	int bufSize = strlen(e_buf);
+	if (strncmp(given_token, e_buf, tokenSize) != 0 ||
+		strncmp(e_buf, given_token, bufSize) != 0) {
+		printf("Error: tokens do not match.\n");
+		return NULL;
+	}
 
-    LogFile *parsed = malloc(sizeof(LogFile));
-    //for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
-    parsed->entries.entry = NULL;
-    parsed->entries.length = 0;
+	LogFile *parsed = malloc(sizeof(LogFile));
+	// for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
+	parsed->entries.entry = NULL;
+	parsed->entries.length = 0;
 
-    e_buf = strtok(NULL, "#");
-    while(e_buf[0] != '\0' && strncmp(e_buf, "ENDLOG", 6) != 0 && strncmp(p_buf, "ENDLOG", 6) != 0) {
+	e_buf = strtok(NULL, "#");
+	while (e_buf[0] != '\0' && strncmp(e_buf, "ENDLOG", 6) != 0 &&
+		strncmp(p_buf, "ENDLOG", 6) != 0) {
+		// Read timestamp
+		uint32_t timestamp = strtoul(e_buf, NULL, 2);
 
-        // Read timestamp
-        uint32_t timestamp = strtoul(e_buf, NULL, 2);
+		// Read employee-name | guest-name | room-id
+		p_buf = e_buf;
+		e_buf = strtok(NULL, "#");
 
-        // Read employee-name | guest-name | room-id
-        p_buf = e_buf;
-        e_buf = strtok(NULL, "#");
+		LogPerson person;
+		person.role = e_buf[0];
 
-        LogPerson person;
-        person.role = e_buf[0];
+		int name_len = strlen(e_buf) - 1;
+		person.name = malloc(name_len * sizeof(char));
+		for (int i = 0; i < name_len + 1; i++) {
+			person.name[i] = e_buf[i + 1];
+		}
 
-        int name_len = strlen(e_buf) - 1;
-        person.name = malloc(name_len * sizeof(char)); 
-        for (int i = 0; i < name_len + 1; i++) {
-            person.name[i] = e_buf[i + 1];
-        }
-        
-        // Read arrival-time | departure-time
-        p_buf = e_buf;
-        e_buf = strtok(NULL, "#");
-        LogEventType event = e_buf[0];
+		// Read arrival-time | departure-time
+		p_buf = e_buf;
+		e_buf = strtok(NULL, "#");
+		LogEventType event = e_buf[0];
 
-        if (e_buf[1] != '\0') {
-            printf(CONSOLE_VIS_ERROR "ERROR: Log '%s' is broken\n" CONSOLE_VIS_RESET, filename);
-            return NULL;
-        }
-        
-        // Optional: room-id
-        p_buf = e_buf;
-        e_buf = strtok(NULL, "#");
-        uint32_t room_id;
-        if (e_buf[0] != '\n') {
-            room_id = strtoul(e_buf, NULL, 10);
-        } else {
-            room_id = UINT32_MAX;
-        }
+		if (e_buf[1] != '\0') {
+			printf(CONSOLE_VIS_ERROR
+				"ERROR: Log '%s' is broken\n" CONSOLE_VIS_RESET,
+				filename);
+			return NULL;
+		}
 
-        LogEntry entry;
-        entry.timestamp = timestamp;
-        entry.person = person;
-        entry.event = event;
-        entry.room_id = room_id;
+		// Optional: room-id
+		p_buf = e_buf;
+		e_buf = strtok(NULL, "#");
+		uint32_t room_id;
+		if (e_buf[0] != '\n') {
+			room_id = strtoul(e_buf, NULL, 10);
+		} else {
+			room_id = UINT32_MAX;
+		}
 
-        logentry_push(&parsed->entries, entry);
-        
-        // Load next entry or end of log
-        p_buf = e_buf;
-        fgets(f_buf, 1024, file);
-        e_buf = strtok(f_buf, "#");
-    }
-    p_buf = e_buf;
+		LogEntry entry;
+		entry.timestamp = timestamp;
+		entry.person = person;
+		entry.event = event;
+		entry.room_id = room_id;
 
-    if (strncmp(p_buf, "ENDLOG", 6) != 0) {
-        printf(CONSOLE_VIS_ERROR "ERROR: '%s' is not a valid log! Read %s\n" CONSOLE_VIS_RESET, filename, p_buf);
-        return NULL;
-    }
+		logentry_push(&parsed->entries, entry);
 
-    printf("Log '%s' seems good!\n", filename);
+		// Load next entry or end of log
+		p_buf = e_buf;
+		fgets(f_buf, 1024, file);
+		e_buf = strtok(f_buf, "#");
+	}
+	p_buf = e_buf;
 
-    free(f_buf);
+	if (strncmp(p_buf, "ENDLOG", 6) != 0) {
+		printf(CONSOLE_VIS_ERROR
+			"ERROR: '%s' is not a valid log! Read %s\n" CONSOLE_VIS_RESET,
+			filename, p_buf);
+		return NULL;
+	}
+
+	printf("Log '%s' seems good!\n", filename);
+
+	free(f_buf);
 
 	fclose(file);
 	file = NULL;
 
-    printf("Read in log with %i entries\n", (int)parsed->entries.length);
+	printf("Read in log with %i entries\n", (int)parsed->entries.length);
 
 	return parsed;
 }
 
-void logentry_push(LogEntryList* list, LogEntry entry) {
-    LogEntry *newEntries = malloc((list->length + 1) * sizeof(LogEntry));
-
-    for (size_t i = 0; i < list->length; i++) {
-        newEntries[i] = list->entry[i];
-    }
-
-    newEntries[list->length] = entry;
-    free(list->entry);
-    list->length += 1;
-    list->entry = newEntries;
-}
-
-LogEntry* logentry_pop(LogEntryList* list) {
-    LogEntry *newEntries = malloc((list->length - 1) * sizeof(LogEntry));
-
-    for (size_t i = 0; i < list->length; i++) {
-        newEntries[i] = list->entry[i];
-    }
-
-    LogEntry *popped = &list->entry[list->length];
-    list->length -= 1;
-    list->entry = newEntries;
-
-    return popped;
+void logfile_write(char *filename, LogFile *data) {
+	die("unimplemented LOLLL", 1);
 }
 
 void logentry_push(LogEntryList *list, LogEntry entry) {

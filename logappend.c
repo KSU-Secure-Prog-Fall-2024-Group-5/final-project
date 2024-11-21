@@ -21,13 +21,91 @@ typedef struct {
 } ArgumentsList;
 
 ArgumentsList parse_args_batch(char *arg_string) {
-	// split by \n
-	// then split by whitespace as if argc/argv
 	ArgumentsList result;
 	result.length = 0;
 	result.args_items = NULL;
+
+	if (arg_string == NULL || arg_string[0] == '\0') return result;
+
+#define is_field_separator(c) (c == ' ' || c == '\t')
+#define is_line_separator(c)  (c == '\n' || c == '\r' || is_field_separator(c))
+
+	// note that because we're really kinda "splitting" a string in half when we
+	// write a terminator in the middle of it, we *start* with one field and one
+	// line.
+	size_t fields_num = 1;
+	size_t lines_num = 1;
+
+	// first scan: find length of string and count the fields and lines.
+	char curr, *iter = arg_string;
+	while ((curr = *(iter++)) != '\0') {
+		if (is_field_separator(curr)) {
+			fields_num++;
+
+			// eat rest of field separators
+			do curr = *(++iter);
+			while is_field_separator(curr);
+		} else if (is_line_separator(curr)) {
+			// making a new line is splitting off a new field AND a new line
+			fields_num++;
+			lines_num++;
+
+			// eat rest of line separators
+			do curr = *(++iter);
+			while is_line_separator(curr);
+		}
+	}
+
+	size_t length_with_terminator = iter - arg_string;
+	size_t length = length_with_terminator - 1; // as if given by strlen
+
+	// copy the arg string to do in-place antics with it without fear of someone
+	// else allocating/deallocating with it and invalidating all the pointers
+	char *arg_string_copy = calloc(length_with_terminator, sizeof(char));
+	strncpy(arg_string_copy, arg_string, length_with_terminator);
+
+	char **fields = calloc(fields_num, sizeof(char *));
+	char **lines = calloc(lines_num, sizeof(char *));
+
+	char **fields_iter = fields;
+	char **lines_iter = lines;
+	iter = arg_string_copy;
+	char *field_start = iter;
+	char *line_start = iter;
+	while ((curr = *(iter++)) != '\0') {
+		if (is_field_separator(curr)) {
+			*iter = '\0';
+			*(fields_iter++) = field_start;
+
+			// eat rest of field separators
+			do curr = *(++iter);
+			while is_field_separator(curr);
+
+			// a new field starts here
+			field_start = iter;
+		} else if (is_line_separator(curr)) {
+			*iter = '\0';
+			*(fields_iter++) = field_start;
+			*(lines_iter++) = line_start;
+
+			// eat rest of line separators
+			do curr = *(++iter);
+			while is_line_separator(curr);
+
+			// a new field AND a new line both start here
+			field_start = iter;
+			line_start = iter;
+		}
+	}
+
+	// and then finally use parse_args on the resulting arrays.
+
 	return result;
 }
+
+// PLEASE only use this with ArgumentsLists that you have rec'vd
+// from the corresponding parse function
+void free_args_batch(ArgumentsList list) { exit(1); }
 
 const char *validate_args(Arguments *args) {
 	const char *msg;
@@ -115,17 +193,22 @@ int main(int argv, char *argc[]) {
 		printf(
 			"%s usage:\n"
 			"logappend -T <timestamp> -K <token>\n"
-			"	( -E <employee-name> | -G <guest-name> )\n"
-			"	( -A | -L )\n"
-			"	[-R <room-id>]\n"
-			"	<log>\n"
-			"logappend -B <file>\n",
+			"    ( -E <employee-name> | -G <guest-name> )\n"
+			"    ( -A | -L )\n"
+			"    [-R <room-id>]\n"
+			"    <log>\n"
+			"# insert \n"
+			"\n"
+			"logappend -B <file>\n"
+			"# execute list of commands read line-by-line from <file>\n"
+			"# the commands shouldn't start with the executable name,\n"
+			"# and they should resemble the first command's form.",
 			argv ? argc[0] : "logappend");
 		exit(EXIT_FAILURE);
 	}
 
 	bool use_batch_file = argv == 3 && strncmp(argc[1], "-B", 3);
-	if (use_batch_file) {}
+	if (use_batch_file) die("i'ven't bothered yet.", EXIT_FAILURE);
 
 	Arguments args = parse_args(argv - 1, &argc[1]);
 
@@ -139,6 +222,7 @@ int main(int argv, char *argc[]) {
 
 		LogFile *file =
 			logfile_read(args_item->log_file, args_item->given_token);
+		if (file == NULL) die("aaah, well...", EXIT_FAILURE);
 		logentry_push(&file->entries, args_item->entry);
 		logfile_write(args_item->log_file, file);
 	}
