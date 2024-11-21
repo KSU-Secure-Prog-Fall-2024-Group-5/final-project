@@ -57,6 +57,33 @@ LogFile *logfile_read(char *filename, char *given_token) {
 		return NULL;
 	}
 
+    char header[8];
+    int read = fread(header, 1, 8, file);
+    if (read != 8 || strncmp("STARTLOG", header, 8) != 0) {
+        printf(CONSOLE_VIS_ERROR "ERROR: '%s' is not a valid log\n" CONSOLE_VIS_RESET, filename);
+        return NULL;
+    }
+
+    int tokenSize = strlen(given_token); 
+    char* buf = malloc(tokenSize);
+    read = fread(buf, 1, tokenSize, file);
+    if (read != tokenSize || strncmp(given_token, buf, tokenSize) != 0) {
+        printf("Error: tokens do not match");
+        return NULL;
+    }
+    free(buf);
+
+    // MOVE THIS --- TEMPORARY
+    buf = malloc(32);
+    read = fread(buf, 1, 32, file);
+    if (read != 32) {
+        printf("Error while reading timestamp\n");
+        return NULL;
+    }
+    uint32_t timestamp = strtoul(buf, NULL, 2);
+    printf("Timestamp: %i\n", timestamp);
+    // END MOVE
+
 	LogFile parsed;
 	for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
 	parsed.entries.entry = NULL;
