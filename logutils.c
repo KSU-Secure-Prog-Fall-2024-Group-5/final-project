@@ -73,16 +73,55 @@ LogFile *logfile_read(char *filename, char *given_token) {
     }
     free(buf);
 
-    // MOVE THIS --- TEMPORARY
-    buf = malloc(32);
-    read = fread(buf, 1, 32, file);
-    if (read != 32) {
-        printf("Error while reading timestamp\n");
+    char *f_buf; // File buffer
+    char *e_buf; // Entry buffer
+    char *p_buf; // Previous entry buffer
+
+    f_buf = malloc(1024);
+    e_buf = malloc(1024);
+    p_buf = malloc(1024);
+    
+    fgets(f_buf, 1024, file);
+
+    e_buf = strtok(f_buf, "#");
+    while(e_buf[0] != '\0' && strncmp(e_buf, "ENDLOG", 6) != 0 && strncmp(p_buf, "ENDLOG", 6) != 0) {
+        // Read timestamp
+        uint32_t timestamp = strtoul(e_buf, NULL, 2);
+        printf("Adjusted timestamp: %i\n", timestamp);
+
+        // Read employee-name | guest-name | room-id
+        p_buf = e_buf;
+        e_buf = strtok(NULL, "#");
+        printf("2: %s\n", e_buf);
+        
+        // Read arrival-time | departure-time
+        p_buf = e_buf;
+        e_buf = strtok(NULL, "#");
+        printf("3: %s\n", e_buf);
+        
+        // Optional : room-id
+        p_buf = e_buf;
+        e_buf = strtok(NULL, "#");
+        if (e_buf[0] != '\n') {
+            printf("4: %s\n", e_buf);
+        }
+        
+        // Load next entry or end of log
+        p_buf = e_buf;
+        fgets(f_buf, 1024, file);
+        e_buf = strtok(f_buf, "#");
+    }
+    p_buf = e_buf;
+
+    if (strncmp(p_buf, "ENDLOG", 6) != 0) {
+        printf(CONSOLE_VIS_ERROR "ERROR: '%s' is not a valid log! Read %s\n" CONSOLE_VIS_RESET, filename, p_buf);
         return NULL;
     }
-    uint32_t timestamp = strtoul(buf, NULL, 2);
-    printf("Timestamp: %i\n", timestamp);
-    // END MOVE
+
+    printf("Log '%s' seems good!\n", filename);
+
+    free(f_buf);
+    free(e_buf);
 
 	LogFile parsed;
 	for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
