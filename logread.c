@@ -18,15 +18,36 @@ typedef struct {
 // Prints out all entries in a log nicely
 // Side effects: prints to screen
 void printLog(LogEntryList *logEntries, int n_entries) {
+
+    printf("\nLOG CONTAINS:\n\n");
+
     for (int i = 0; i < n_entries; i++) {
         LogEntry *current = &logEntries->entry[i];
-        printf("[%i] %i, %i, %s %s %s\n",
+
+        char *role; 
+        if (current->person.role == '&') role = "employee\0";
+        else role = "guest\0";
+
+        char *event;
+        if (current->event == '>') event = "arrives\0";
+        else event = "departs\0";
+
+        if (current->room_id != UINT32_MAX) {
+            printf("[%i] At %i in room %i, %s %s %s\n",
                i,
                current->timestamp,
                current->room_id,
-               current->person.role ? "Employee" : "Guest",
+               role,
                current->person.name,
-               current->event ? "Arrival" : "Departure");
+               event);
+        } else {
+            printf("[%i] At %i, %s %s %s the gallery\n",
+                    i,
+                    current->timestamp,
+                    role,
+                    current->person.name,
+                    event);
+        }
     }
 }
 
@@ -60,6 +81,8 @@ int logread_parse_args(int argv, char *argc[], arguments *args) {
     int length = strlen(argc[2]);
     args->token = malloc(length);
     strncpy(args->token, argc[2], length); 
+
+    args->person.name = NULL;
 
     // -S is exclusive, if it is found, we return
     if (strncmp(argc[3], "-S", 2) == 0) { 
@@ -126,14 +149,11 @@ int main(int argv, char *argc[]) {
         return EXIT_FAILURE;
     }
 
-    const int n_entries = sizeof(&log->entries.entry) / sizeof(LogEntry);
-
-    if (args.mode == 0) printLog(&log->entries, n_entries);
-    else findPerson(&log->entries, args.person, n_entries);
+    if (args.mode == 0) printLog(&log->entries, log->entries.length);
+    else findPerson(&log->entries, args.person, log->entries.length);
 
     free(args.token);
     free(args.logname);
-    free(args.person.name);
 
     return EXIT_SUCCESS;
 }
