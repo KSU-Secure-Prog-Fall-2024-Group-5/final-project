@@ -54,19 +54,32 @@ void printLog(LogEntryList *logEntries, int n_entries) {
 // Finds and prints all records in a log associated with a given LogPerson
 // Side effects: prints to screen
 void findPerson(LogEntryList *logEntries, LogPerson person, int n_entries) {
+
+    char *role; 
+    if (person.role == '&') role = "employee\0";
+    else role = "guest\0";
+                             
+    int name_len = strlen(person.name);
+
+    printf("\nLOG ENTRIES WITH %s '%s':\n\n", role, person.name);
+
     for (int i = 0; i < n_entries; i++) {
         LogEntry *current = &logEntries->entry[i];
         LogPerson *cPerson = &current->person;     
 
-        if(cPerson->name == person.name && cPerson->role == person.role) {
+        char *event; 
+        if (current->event == '>') event = "arrives\0"; 
+        else event = "departs\0";
+
+        if(strncmp(person.name, cPerson->name, name_len) == 0 && cPerson->role == person.role) {
             printf("[%i] %i, %i, %s %s %s\n",
                    i,
                    current->timestamp,
                    current->room_id,
-                   current->person.role ? "Employee" : "Guest",
+                   role,
                    current->person.name,
-                   current->event ? "Arrival" : "Departure");
-        }
+                   event);
+        } 
     }
 }
 
@@ -105,7 +118,7 @@ int logread_parse_args(int argv, char *argc[], arguments *args) {
 
     if (strncmp(argc[4], "-E", 2) == 0) {
        args->person.role = LOG_ROLE_EMPLOYEE; 
-    } else if (strncmp(argc[4], "-R", 2) == 0) {
+    } else if (strncmp(argc[4], "-G", 2) == 0) {
         args->person.role = LOG_ROLE_GUEST;
     } else return 1;
 
