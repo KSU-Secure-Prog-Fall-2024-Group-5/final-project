@@ -128,6 +128,10 @@ const char *logargs_validate(LogArgs *args) {
 
 LogFile *logfile_read(char *filename, char *given_token) {
 	FILE *file = fopen(filename, "r");
+	if (file == NULL) {
+		printf("\033[0;31mERROR: Unable to open file '%s' \033[0;37m \n", filename);
+		return NULL;
+	}
 
 	LogFile parsed;
 	for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
