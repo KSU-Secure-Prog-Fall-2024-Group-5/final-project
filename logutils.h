@@ -37,19 +37,6 @@ typedef struct {
 	LogEntryList entries;
 } LogFile;
 
-typedef struct {
-	char *given_token;
-	LogEntry entry;
-	char *log_file;
-} LogArgs;
-
-typedef struct {
-	size_t length;
-	LogArgs *args_items;
-} LogArgsList;
-
-LogArgsList parse_args_batch(char *arg_string);
-LogArgs parse_args(size_t args_len, char *args[]);
 // STARTLOG and ENDLOG markers are not in LogEntries vec
 
 LogFile *logfile_read(char *filename, char *given_token);
@@ -63,7 +50,6 @@ const char *validate_token(char *);
 const char *validate_name(char *);
 
 const char *logentry_validate(LogEntry *);
-const char *logargs_validate(LogArgs *);
 
 void logentry_push(LogEntryList *, LogEntry);
 LogEntry logentry_pop(LogEntryList *);

@@ -11,6 +11,9 @@
 #define stringify_eval(x) #x
 #define stringify(x)      stringify_eval(x)
 
+#define CONSOLE_VIS_ERROR "\033[31m"
+#define CONSOLE_VIS_RESET "\033[m"
+
 #define die(msg, exit_no) \
 	do { \
 		puts(__FILE_NAME__ "@" stringify(__LINE__) ": " msg); \
