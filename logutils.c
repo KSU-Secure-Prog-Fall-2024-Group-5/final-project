@@ -179,3 +179,25 @@ LogEntry* logentry_pop(LogEntryList* list) {
 
     return popped;
 }
+
+void logentry_push(LogEntryList *list, LogEntry entry) {
+	size_t new_length = list->length + 1;
+	size_t new_size = new_length * sizeof(LogEntry);
+	if (new_size / sizeof(LogEntry) != new_length)
+		die("overflow in logentry push realloc", 1);
+	list->entry = realloc(list->entry, new_size);
+	if (list->entry == NULL)
+		die("failed to resize list in logentry push realloc", 1);
+	list->length = new_length;
+	list->entry[new_length - 1] = entry;
+}
+
+LogEntry logentry_pop(LogEntryList *list) {
+	LogEntry result = list->entry[list->length--];
+	size_t new_size = list->length * sizeof(LogEntry);
+	if (new_size / sizeof(LogEntry) != list->length)
+		die("overflow in logentry pop realloc", 1);
+	list->entry = realloc(list->entry, new_size);
+	return result;
+}
+// you're in charge of alloc'ing names
