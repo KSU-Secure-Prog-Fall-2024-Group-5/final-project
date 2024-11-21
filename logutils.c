@@ -83,7 +83,7 @@ LogFile *logfile_read(char *filename, char *given_token) {
     
     fgets(f_buf, 1024, file);
 
-    LogFile *parsed;
+    LogFile *parsed = malloc(sizeof(LogFile));
     //for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
     parsed->entries.entry = NULL;
     parsed->entries.length = 0;
@@ -137,7 +137,7 @@ LogFile *logfile_read(char *filename, char *given_token) {
 void logentry_push(LogEntryList* list, LogEntry entry) {
     LogEntry *newEntries = malloc((list->length + 1) * sizeof(LogEntry));
 
-    for (int i = 0; i < list->length; i++) {
+    for (size_t i = 0; i < list->length; i++) {
         newEntries[i] = list->entry[i];
     }
 
@@ -145,4 +145,18 @@ void logentry_push(LogEntryList* list, LogEntry entry) {
     free(list->entry);
     list->length += 1;
     list->entry = newEntries;
+}
+
+LogEntry* logentry_pop(LogEntryList* list) {
+    LogEntry *newEntries = malloc((list->length - 1) * sizeof(LogEntry));
+
+    for (size_t i = 0; i < list->length; i++) {
+        newEntries[i] = list->entry[i];
+    }
+
+    LogEntry *popped = &list->entry[list->length];
+    list->length -= 1;
+    list->entry = newEntries;
+
+    return popped;
 }
