@@ -83,6 +83,11 @@ LogFile *logfile_read(char *filename, char *given_token) {
     
     fgets(f_buf, 1024, file);
 
+    LogFile *parsed;
+    //for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
+    parsed->entries.entry = NULL;
+    parsed->entries.length = 0;
+
     e_buf = strtok(f_buf, "#");
     while(e_buf[0] != '\0' && strncmp(e_buf, "ENDLOG", 6) != 0 && strncmp(p_buf, "ENDLOG", 6) != 0) {
         // Read timestamp
@@ -123,14 +128,21 @@ LogFile *logfile_read(char *filename, char *given_token) {
     free(f_buf);
     free(e_buf);
 
-	LogFile parsed;
-	for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
-	parsed.entries.entry = NULL;
-	parsed.entries.length = 0;
-
 	fclose(file);
 	file = NULL;
 
-	exit(1);
-	// return parsed;
+	return parsed;
+}
+
+void logentry_push(LogEntryList* list, LogEntry entry) {
+    LogEntry *newEntries = malloc((list->length + 1) * sizeof(LogEntry));
+
+    for (int i = 0; i < list->length; i++) {
+        newEntries[i] = list->entry[i];
+    }
+
+    newEntries[list->length] = entry;
+    free(list->entry);
+    list->length += 1;
+    list->entry = newEntries;
 }
