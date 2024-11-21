@@ -90,26 +90,50 @@ LogFile *logfile_read(char *filename, char *given_token) {
 
     e_buf = strtok(f_buf, "#");
     while(e_buf[0] != '\0' && strncmp(e_buf, "ENDLOG", 6) != 0 && strncmp(p_buf, "ENDLOG", 6) != 0) {
+
         // Read timestamp
         uint32_t timestamp = strtoul(e_buf, NULL, 2);
-        printf("Adjusted timestamp: %i\n", timestamp);
 
         // Read employee-name | guest-name | room-id
         p_buf = e_buf;
         e_buf = strtok(NULL, "#");
-        printf("2: %s\n", e_buf);
+
+        LogPerson person;
+        person.role = e_buf[0];
+
+        int name_len = strlen(e_buf) - 1;
+        person.name = malloc(name_len * sizeof(char)); 
+        for (int i = 0; i < name_len + 1; i++) {
+            person.name[i] = e_buf[i + 1];
+        }
         
         // Read arrival-time | departure-time
         p_buf = e_buf;
         e_buf = strtok(NULL, "#");
-        printf("3: %s\n", e_buf);
+        LogEventType event = e_buf[0];
+
+        if (e_buf[1] != '\0') {
+            printf(CONSOLE_VIS_ERROR "ERROR: Log '%s' is broken\n" CONSOLE_VIS_RESET, filename);
+            return NULL;
+        }
         
-        // Optional : room-id
+        // Optional: room-id
         p_buf = e_buf;
         e_buf = strtok(NULL, "#");
+        uint32_t room_id;
         if (e_buf[0] != '\n') {
-            printf("4: %s\n", e_buf);
+            room_id = strtoul(e_buf, NULL, 10);
+        } else {
+            room_id = UINT32_MAX;
         }
+
+        LogEntry entry;
+        entry.timestamp = timestamp;
+        entry.person = person;
+        entry.event = event;
+        entry.room_id = room_id;
+
+        logentry_push(&parsed->entries, entry);
         
         // Load next entry or end of log
         p_buf = e_buf;
@@ -126,10 +150,11 @@ LogFile *logfile_read(char *filename, char *given_token) {
     printf("Log '%s' seems good!\n", filename);
 
     free(f_buf);
-    free(e_buf);
 
 	fclose(file);
 	file = NULL;
+
+    printf("Read in log with %i entries\n", (int)parsed->entries.length);
 
 	return parsed;
 }
