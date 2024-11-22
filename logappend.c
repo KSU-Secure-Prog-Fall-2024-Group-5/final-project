@@ -20,6 +20,51 @@ typedef struct {
 	Arguments *args_items;
 } ArgumentsList;
 
+Arguments parse_args(size_t args_len, char *args[]);
+
+typedef struct {
+	size_t fields_num;
+	size_t lines_num;
+	size_t length_with_terminator;
+} ArgumentsStringInfo;
+
+#define is_field_separator(c) (c == ' ' || c == '\t')
+#define is_line_separator(c)  (c == '\n' || c == '\r')
+#define is_separator(c)       (is_field_separator(c) || is_line_separator(c))
+
+ArgumentsStringInfo parse_args_info(char *arg_string) {
+	ArgumentsStringInfo result;
+	result.fields_num = 1;
+	result.lines_num = 1;
+
+	// note that because we're really kinda "splitting" a string in half when we
+	// write a terminator in the middle of it, we *start* with one field and one
+	// line.
+
+	// first scan: find length of string and count the fields and lines.
+	char curr, *iter = arg_string;
+	while ((curr = *(iter++)) != '\0') {
+		if (is_separator(curr)) {
+			bool is_line = is_line_separator(curr);
+
+			// eat rest of line separators
+			do {
+				curr = *(++iter);
+				is_line |= is_line_separator(curr);
+			} while (is_field_separator(curr));
+
+			// making a new line is splitting off a new field AND a new line
+			result.fields_num++;
+			if (is_line) result.lines_num++;
+		}
+	}
+
+	result.length_with_terminator = iter - arg_string;
+	// as if given by strlen but plus 1
+
+	return result;
+}
+
 ArgumentsList parse_args_batch(char *arg_string) {
 	ArgumentsList result;
 	result.length = 0;
@@ -27,75 +72,60 @@ ArgumentsList parse_args_batch(char *arg_string) {
 
 	if (arg_string == NULL || arg_string[0] == '\0') return result;
 
-#define is_field_separator(c) (c == ' ' || c == '\t')
-#define is_line_separator(c)  (c == '\n' || c == '\r' || is_field_separator(c))
-
-	// note that because we're really kinda "splitting" a string in half when we
-	// write a terminator in the middle of it, we *start* with one field and one
-	// line.
-	size_t fields_num = 1;
-	size_t lines_num = 1;
-
-	// first scan: find length of string and count the fields and lines.
-	char curr, *iter = arg_string;
-	while ((curr = *(iter++)) != '\0') {
-		if (is_field_separator(curr)) {
-			fields_num++;
-
-			// eat rest of field separators
-			do curr = *(++iter);
-			while is_field_separator(curr);
-		} else if (is_line_separator(curr)) {
-			// making a new line is splitting off a new field AND a new line
-			fields_num++;
-			lines_num++;
-
-			// eat rest of line separators
-			do curr = *(++iter);
-			while is_line_separator(curr);
-		}
-	}
-
-	size_t length_with_terminator = iter - arg_string;
-	size_t length = length_with_terminator - 1; // as if given by strlen
+	ArgumentsStringInfo info = parse_args_info(arg_string);
 
 	// copy the arg string to do in-place antics with it without fear of someone
 	// else allocating/deallocating with it and invalidating all the pointers
-	char *arg_string_copy = calloc(length_with_terminator, sizeof(char));
-	strncpy(arg_string_copy, arg_string, length_with_terminator);
+	char *arg_buffer = calloc(info.length_with_terminator, sizeof(char));
+	strncpy(arg_buffer, arg_string, info.length_with_terminator);
 
-	char **fields = calloc(fields_num, sizeof(char *));
-	char **lines = calloc(lines_num, sizeof(char *));
+	// pointers to where each field/line starts in the arg_buffer
+	char **fields = calloc(info.fields_num, sizeof(char *));
+	size_t *line_starts_at = calloc(info.lines_num, sizeof(size_t));
 
-	char **fields_iter = fields;
-	char **lines_iter = lines;
-	iter = arg_string_copy;
+	// also keep a respective iterator for the two pointer arrays
+	size_t field_index = 0;
+	size_t line_index = 0;
+
+	// make the funny iter variables...
+	char curr, *iter = arg_buffer;
+
+	// stash the start point of each field to assign, when the time comes
+	// and we find an end point and split it off by writing a '\0'
 	char *field_start = iter;
-	char *line_start = iter;
+
 	while ((curr = *(iter++)) != '\0') {
-		if (is_field_separator(curr)) {
-			*iter = '\0';
-			*(fields_iter++) = field_start;
+		if (is_separator(curr)) {
+			// split off the string as we've reached the end of a field.
+			// since the iterator has already passed the character, we index
+			// backwards to overwrite the separator character, but this is okay
+			iter[-1] = '\0';
 
-			// eat rest of field separators
-			do curr = *(++iter);
-			while is_field_separator(curr);
-
-			// a new field starts here
-			field_start = iter;
-		} else if (is_line_separator(curr)) {
-			*iter = '\0';
-			*(fields_iter++) = field_start;
-			*(lines_iter++) = line_start;
+			bool is_line = is_line_separator(curr);
 
 			// eat rest of line separators
-			do curr = *(++iter);
-			while is_line_separator(curr);
+			do {
+				curr = *(++iter);
+				is_line |= is_line_separator(curr);
+			} while (is_field_separator(curr));
 
-			// a new field AND a new line both start here
-			field_start = iter;
-			line_start = iter;
+			// a complete field item is inside the range
+			// arg_buffer[field_start..iter]
+			fields[field_index] = field_start;
+
+			// and if it's a line, save the field index. it's important
+			if (is_line) line_starts_at[line_index++] = field_index;
 		}
+	}
+
+	// and then we allocate the Arguments buffer
+	Arguments *args_items = calloc(info.lines_num, sizeof(Arguments));
+	result.args_items = args_items;
+	result.length = info.lines_num;
+
+	for (size_t i = 0; i < result.length; i++) {
+		size_t args_len = line_starts_at; // TODO: hlep meee
+		args_items[i] = parse_args(args_len, &fields[line_starts_at[i]]);
 	}
 
 	// and then finally use parse_args on the resulting arrays.
@@ -188,6 +218,25 @@ Arguments parse_args(size_t args_len, char *args[]) {
 	return result;
 }
 
+char *read_into_string(FILE *file, size_t *out_length) {
+#define BUFFER_GROW_BY 256
+	size_t local_length;
+	if (out_length == NULL) out_length = &local_length;
+	*out_length = 0;
+
+	char *result = NULL;
+
+	while (!feof(file)) {
+		size_t new_length = BUFFER_GROW_BY + *out_length;
+		result = realloc(result, BUFFER_GROW_BY);
+		size_t entries =
+			fread(&result[*out_length], sizeof(char), BUFFER_GROW_BY, file);
+		*out_length += entries;
+	}
+
+	return result;
+}
+
 int main(int argv, char *argc[]) {
 	if (argv <= 1) {
 		printf(
@@ -207,14 +256,21 @@ int main(int argv, char *argc[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	bool use_batch_file = argv == 3 && strncmp(argc[1], "-B", 3);
-	if (use_batch_file) die("i'ven't bothered yet.", EXIT_FAILURE);
-
-	Arguments args = parse_args(argv - 1, &argc[1]);
+	bool use_batch_file = argv == 3 && strncmp(argc[1], "-B", 3) == 0;
+	printf("use batch file? %s\n", use_batch_file ? "yeah" : "no");
 
 	ArgumentsList args_list;
-	args_list.length = 1;
-	args_list.args_items = &args;
+	if (use_batch_file) {
+		FILE *file = fopen(argc[2], "r");
+		char *file_str = read_into_string(file, NULL);
+		args_list = parse_args_batch(file_str);
+		free(file_str);
+	} else {
+		Arguments args = parse_args(argv - 1, &argc[1]);
+		args_list.length = 1;
+		args_list.args_items = &args;
+	}
+
 
 	for (size_t i = 0; i < args_list.length; i++) {
 		Arguments *args_item = &args_list.args_items[i];
