@@ -49,12 +49,17 @@ const char *logentry_validate(LogEntry *entry) {
 }
 
 LogFile *logfile_read(char *filename, char *given_token) {
+	LogFile *parsed = calloc(1, sizeof(LogFile));
+	parsed->token_to_save = NULL;
+	parsed->entries.entry = NULL;
+	parsed->entries.length = 0;
+
 	FILE *file = fopen(filename, "r");
 	if (file == NULL) {
 		printf(CONSOLE_VIS_ERROR
 			"ERROR: Unable to open file '%s'" CONSOLE_VIS_RESET "\n",
 			filename);
-		return NULL;
+		return parsed;
 	}
 
 	char header[8];
@@ -79,10 +84,6 @@ LogFile *logfile_read(char *filename, char *given_token) {
 		printf("Error: tokens do not match.\n");
 		return NULL;
 	}
-
-	LogFile *parsed = calloc(1, sizeof(LogFile));
-	parsed->entries.entry = NULL;
-	parsed->entries.length = 0;
 
 	e_buf = strtok(NULL, "#");
 	while (e_buf[0] != '\0' && strncmp(e_buf, "ENDLOG", 6) != 0 &&
@@ -160,7 +161,33 @@ LogFile *logfile_read(char *filename, char *given_token) {
 }
 
 void logfile_write(char *filename, LogFile *data) {
-	die("unimplemented LOLLL", 1);
+	FILE *file = fopen(filename, "w");
+	if (file == NULL) die("couldn't create logfile!", 1);
+
+	fprintf(file,
+		"STARTLOG"
+		"%s*",
+		data->token_to_save);
+
+	for (size_t i = 0; i < data->entries.length; i++) {
+		LogEntry *entry = &data->entries.entry[i];
+
+		printf("entry timestamp %u\n", entry->timestamp);
+		fprintf(file,
+			"%b#"   // timestamp
+			"%c%s#" // person (role and name)
+			"%c#"   // event type
+			,
+			entry->timestamp, entry->person.role, entry->person.name,
+			entry->event);
+		if (entry->room_id != UINT32_MAX) {
+			fprintf(file, "%u#", entry->room_id);
+		}
+		fputc('\n', file);
+	}
+
+	fprintf(file, "ENDLOG");
+	fclose(file);
 }
 
 void logentry_push(LogEntryList *list, LogEntry entry) {

@@ -178,10 +178,6 @@ ArgumentsList parse_args_batch(char *arg_string) {
 	size_t line_index = 0;
 	bool on_new_line = true;
 
-	// stash the start point of each field to assign, when the time comes
-	// and we find an end point and split it off by writing a '\0'
-	size_t first_field_of_line = 0;
-
 	for (size_t iter = 0; iter < info.length; ++iter) {
 		char curr = result.buffer[iter];
 		if (curr == '\0' || is_separator(curr)) {
@@ -332,6 +328,7 @@ int main(int argv, char *argc[]) {
 			logfile_read(args_item->log_file, args_item->given_token);
 		if (file == NULL) die("aaah, well...", EXIT_FAILURE);
 		logentry_push(&file->entries, args_item->entry);
+		file->token_to_save = args_item->given_token;
 		logfile_write(args_item->log_file, file);
 	}
 

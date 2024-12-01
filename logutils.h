@@ -33,7 +33,7 @@ typedef struct {
 } LogEntryList;
 
 typedef struct {
-	uint8_t token[128 / 8];
+	char *token_to_save;
 	LogEntryList entries;
 } LogFile;
 
