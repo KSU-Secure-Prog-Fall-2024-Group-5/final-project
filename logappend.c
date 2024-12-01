@@ -320,6 +320,8 @@ int main(int argv, char *argc[]) {
 																: "invalid");
 	}
 
+	if (!init_libgcrypt()) return EXIT_FAILURE;
+
 	for (size_t i = 0; i < args_list.length; i++) {
 		Arguments *args_item = &args_list.args_items[i];
 		if (!args_item) die("item in args list was NULL?", EXIT_FAILURE);
@@ -345,10 +347,8 @@ int main(int argv, char *argc[]) {
 		logentry_push(&file->entries, args_item->entry);
 		logfile_write(args_item->log_file, file);
 
-		if (new_file) free(file);
+		free(file);
 	}
-
-	if (!init_libgcrypt()) return EXIT_FAILURE;
 
 	if (use_batch_file) free_args_batch(args_list);
 
