@@ -80,8 +80,7 @@ LogFile *logfile_read(char *filename, char *given_token) {
 		return NULL;
 	}
 
-	LogFile *parsed = malloc(sizeof(LogFile));
-	// for (size_t i = 0; i < sizeofarr(parsed.token); i++) parsed.token[i] = 0;
+	LogFile *parsed = calloc(1, sizeof(LogFile));
 	parsed->entries.entry = NULL;
 	parsed->entries.length = 0;
 
