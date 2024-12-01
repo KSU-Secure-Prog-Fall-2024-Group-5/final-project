@@ -324,12 +324,28 @@ int main(int argv, char *argc[]) {
 		Arguments *args_item = &args_list.args_items[i];
 		if (!args_item) die("item in args list was NULL?", EXIT_FAILURE);
 
-		LogFile *file =
-			logfile_read(args_item->log_file, args_item->given_token);
-		if (file == NULL) die("aaah, well...", EXIT_FAILURE);
-		logentry_push(&file->entries, args_item->entry);
+		bool new_file = false;
+		{
+			FILE *test = fopen(args_item->log_file, "r");
+			new_file = test == NULL;
+			if (!new_file) fclose(test);
+		}
+
+		LogFile *file;
+		if (new_file) {
+			file = calloc(1, sizeof(LogFile));
+			file->entries.entry = NULL;
+			file->entries.length = 0;
+		} else {
+			file = logfile_read(args_item->log_file, args_item->given_token);
+			if (file == NULL) exit(EXIT_FAILURE);
+		}
 		file->token_to_save = args_item->given_token;
+
+		logentry_push(&file->entries, args_item->entry);
 		logfile_write(args_item->log_file, file);
+
+		if (new_file) free(file);
 	}
 
 	if (!init_libgcrypt()) return EXIT_FAILURE;

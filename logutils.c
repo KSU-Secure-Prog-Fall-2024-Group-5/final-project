@@ -49,17 +49,12 @@ const char *logentry_validate(LogEntry *entry) {
 }
 
 LogFile *logfile_read(char *filename, char *given_token) {
-	LogFile *parsed = calloc(1, sizeof(LogFile));
-	parsed->token_to_save = NULL;
-	parsed->entries.entry = NULL;
-	parsed->entries.length = 0;
-
 	FILE *file = fopen(filename, "r");
 	if (file == NULL) {
 		printf(CONSOLE_VIS_ERROR
 			"ERROR: Unable to open file '%s'" CONSOLE_VIS_RESET "\n",
 			filename);
-		return parsed;
+		return NULL;
 	}
 
 	char header[8];
@@ -84,6 +79,11 @@ LogFile *logfile_read(char *filename, char *given_token) {
 		printf("Error: tokens do not match.\n");
 		return NULL;
 	}
+
+	LogFile *parsed = calloc(1, sizeof(LogFile));
+	parsed->token_to_save = NULL;
+	parsed->entries.entry = NULL;
+	parsed->entries.length = 0;
 
 	e_buf = strtok(NULL, "#");
 	while (e_buf[0] != '\0' && strncmp(e_buf, "ENDLOG", 6) != 0 &&
