@@ -166,7 +166,7 @@ ArgumentsList parse_args_batch(char *arg_string) {
 
 	// copy the arg string to do in-place antics with it without fear of someone
 	// else allocating/deallocating with it and invalidating all the pointers
-	result.buffer = calloc(info.length, sizeof(char));
+	result.buffer = calloc(info.length + 1, sizeof(char));
 	strncpy(result.buffer, arg_string, info.length);
 
 	// pointers to where each field/line starts in the arg_buffer
@@ -228,6 +228,7 @@ ArgumentsList parse_args_batch(char *arg_string) {
 		args_items[i] = parse_args(args_len, &fields[first_field_of_lines[i]]);
 	} // and then finally use parse_args on the resulting arrays.
 
+	free(fields);
 	free(first_field_of_lines);
 
 	return result;
@@ -239,7 +240,10 @@ ArgumentsList parse_args_batch(char *arg_string) {
 
 // PLEASE only use this with ArgumentsLists that you have rec'vd
 // from the corresponding parse_args_batch function
-void free_args_batch(ArgumentsList list) { free(list.buffer); }
+void free_args_batch(ArgumentsList list) {
+	free(list.args_items);
+	free(list.buffer);
+}
 
 char *read_into_string(FILE *file, size_t *out_length) {
 #define BUFFER_GROW_BY 256
@@ -247,17 +251,29 @@ char *read_into_string(FILE *file, size_t *out_length) {
 	if (out_length == NULL) out_length = &local_length;
 	*out_length = 0;
 
-	char *result = NULL;
+	size_t capacity = BUFFER_GROW_BY * 2;
+	char *result = calloc(capacity, sizeof(char));
 
 	while (!feof(file)) {
-		size_t new_length = BUFFER_GROW_BY + *out_length;
-		result = realloc(result, new_length);
+		size_t margin = capacity - *out_length;
+		if (margin <= BUFFER_GROW_BY) {
+			printf("margin is %ld; resizing from %ld to %ld\n", margin,
+				capacity, capacity + BUFFER_GROW_BY);
+			capacity += BUFFER_GROW_BY;
+			result = realloc(result, capacity);
+		}
 		size_t entries =
 			fread(&result[*out_length], sizeof(char), BUFFER_GROW_BY, file);
 		*out_length += entries;
 	}
 
+	if (capacity == *out_length)
+		die("not enough space to add null terminator?", 1);
+
+	result[*out_length] = '\0';
+
 	return result;
+#undef BUFFER_GROW_BY
 }
 
 int main(int argv, char *argc[]) {
@@ -274,7 +290,7 @@ int main(int argv, char *argc[]) {
 			"logappend -B <file>\n"
 			"# execute list of commands read line-by-line from <file>\n"
 			"# the commands shouldn't start with the executable name,\n"
-			"# and they should resemble the first command's form.",
+			"# and they should resemble the first command's form.\n",
 			argv ? argc[0] : "logappend");
 		exit(EXIT_FAILURE);
 	}
@@ -285,7 +301,9 @@ int main(int argv, char *argc[]) {
 	ArgumentsList args_list;
 	if (use_batch_file) {
 		FILE *file = fopen(argc[2], "r");
+		if (file == NULL) die("couldn't open file!", 1);
 		char *file_str = read_into_string(file, NULL);
+		fclose(file);
 		args_list = parse_args_batch(file_str);
 		free(file_str);
 	} else {
@@ -347,6 +365,7 @@ int main(int argv, char *argc[]) {
 		logentry_push(&file->entries, args_item->entry);
 		logfile_write(args_item->log_file, file);
 
+		logfile_free(file);
 		free(file);
 	}
 

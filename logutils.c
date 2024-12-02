@@ -89,7 +89,7 @@ LogFile *logfile_read(char *filename, char *given_token) {
 	while (e_buf[0] != '\0' && strncmp(e_buf, "ENDLOG", 6) != 0 &&
 		strncmp(p_buf, "ENDLOG", 6) != 0) {
 		// Read timestamp
-		uint32_t timestamp = strtoul(e_buf, NULL, 2);
+		uint32_t timestamp = strtoul(e_buf, NULL, 16);
 
 		// Read employee-name | guest-name | room-id
 		p_buf = e_buf;
@@ -172,9 +172,8 @@ void logfile_write(char *filename, LogFile *data) {
 	for (size_t i = 0; i < data->entries.length; i++) {
 		LogEntry *entry = &data->entries.entry[i];
 
-		printf("entry timestamp %u\n", entry->timestamp);
 		fprintf(file,
-			"%b#"   // timestamp
+			"%x#"   // timestamp
 			"%c%s#" // person (role and name)
 			"%c#"   // event type
 			,
@@ -211,3 +210,11 @@ LogEntry logentry_pop(LogEntryList *list) {
 	return result;
 }
 // you're in charge of alloc'ing names
+
+void logentry_free(LogEntryList *list) {
+	free(list->entry);
+	list->entry = NULL;
+	list->length = 0;
+}
+
+void logfile_free(LogFile *file) { logentry_free(&file->entries); }
