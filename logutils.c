@@ -67,8 +67,8 @@ LogFile *logfile_read(char *filename, char *given_token) {
 	}
 
 	char *f_buf = malloc(2048); // File buffer
-	char *e_buf = malloc(2048); // Entry buffer
-	char *p_buf = malloc(2048); // Previous buffer
+	char *e_buf = f_buf;        // Entry buffer
+	char *p_buf = f_buf;        // Previous buffer
 
 	int tokenSize = strlen(given_token);
 	fgets(f_buf, 2048, file);
@@ -98,11 +98,9 @@ LogFile *logfile_read(char *filename, char *given_token) {
 		LogPerson person;
 		person.role = e_buf[0];
 
-		int name_len = strlen(e_buf) - 1;
+		int name_len = (strlen(e_buf) - 1) + 1;
 		person.name = malloc(name_len * sizeof(char));
-		for (int i = 0; i < name_len + 1; i++) {
-			person.name[i] = e_buf[i + 1];
-		}
+		for (int i = 0; i < name_len; i++) { person.name[i] = e_buf[i + 1]; }
 
 		// Read arrival-time | departure-time
 		p_buf = e_buf;
@@ -210,11 +208,20 @@ LogEntry logentry_pop(LogEntryList *list) {
 	return result;
 }
 // you're in charge of alloc'ing names
+// but we're in charge of freeing them
 
 void logentry_free(LogEntryList *list) {
+	for (size_t i = 0; i < list->length; i++) {
+		LogEntry *entry = &list->entry[i];
+
+		free(entry->person.name);
+	}
 	free(list->entry);
 	list->entry = NULL;
 	list->length = 0;
 }
 
-void logfile_free(LogFile *file) { logentry_free(&file->entries); }
+void logfile_free(LogFile *file) {
+	logentry_free(&file->entries);
+	free(file);
+}

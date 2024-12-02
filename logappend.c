@@ -73,7 +73,7 @@ Arguments parse_args(size_t args_len, char *args[]) {
 			// -E <employee-name> | -G <guest-name>
 			if (result.entry.person.name != NULL)
 				die("only one person per entry", 1);
-			result.entry.person.name = args[i + 1];
+			result.entry.person.name = duplicate_string(args[i + 1]);
 			result.entry.person.role =
 				args[i][1] == 'E' ? LOG_ROLE_EMPLOYEE : LOG_ROLE_GUEST;
 			i++;
@@ -94,6 +94,7 @@ Arguments parse_args(size_t args_len, char *args[]) {
 			// <log>
 			if (result.log_file != NULL)
 				die("only one log file per command", 1);
+			// outside of logentry so shouldn't be malloc'd
 			result.log_file = args[i];
 		}
 #undef need_arg
@@ -345,7 +346,7 @@ int main(int argv, char *argc[]) {
 		if (!args_item) die("item in args list was NULL?", EXIT_FAILURE);
 
 		bool new_file = false;
-		{
+		{ // does the specified file already exist?
 			FILE *test = fopen(args_item->log_file, "r");
 			new_file = test == NULL;
 			if (!new_file) fclose(test);
@@ -353,6 +354,7 @@ int main(int argv, char *argc[]) {
 
 		LogFile *file;
 		if (new_file) {
+			// make the bare minimum to hold log entries
 			file = calloc(1, sizeof(LogFile));
 			file->entries.entry = NULL;
 			file->entries.length = 0;
@@ -360,13 +362,13 @@ int main(int argv, char *argc[]) {
 			file = logfile_read(args_item->log_file, args_item->given_token);
 			if (file == NULL) exit(EXIT_FAILURE);
 		}
+		// also save the token to save when we write
 		file->token_to_save = args_item->given_token;
 
 		logentry_push(&file->entries, args_item->entry);
 		logfile_write(args_item->log_file, file);
 
 		logfile_free(file);
-		free(file);
 	}
 
 	if (use_batch_file) free_args_batch(args_list);

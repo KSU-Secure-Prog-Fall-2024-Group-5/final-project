@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <string.h>
 
 #include <gcrypt.h>
 
@@ -17,11 +18,20 @@
 
 #define die(msg, exit_no) \
 	do { \
-		puts(CONSOLE_VIS_PANIC __FILE_NAME__ ":" stringify(__LINE__) ": " msg CONSOLE_VIS_RESET); \
+		puts(CONSOLE_VIS_PANIC __FILE_NAME__ \
+			":" stringify(__LINE__) ": " msg CONSOLE_VIS_RESET); \
 		exit(exit_no); \
 	} while (0)
 
+static char *duplicate_string(char *s) {
+	size_t s_size = strlen(s);
+	char *d = calloc(s_size + 1, sizeof(char));
+	strncpy(d, s, s_size);
+	return d;
+}
+
 static bool init_libgcrypt() {
+	return true;
 	// Directly copied from:
 	// https://gnupg.org/documentation/manuals/gcrypt/Initializing-the-library.html
 
